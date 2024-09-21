@@ -1,0 +1,3 @@
+ARG OSTICKET_VERSION
+FROM php:8.2-fpm
+
