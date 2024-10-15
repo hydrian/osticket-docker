@@ -17,3 +17,4 @@ RUN \
 	useradd -u "$UID" "$USERNAME" && 
 COPY msmtp.conf /etc/msmtp
 USER $USERNAME
+c
