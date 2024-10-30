@@ -160,7 +160,7 @@ RUN \
 	chmod +x "${CRON_SCRIPT}" && \
 	sed -ir 's|http://yourdomain.com/support|http://localhost|' "${CRON_SCRIPT}" && \
 	chown ${PUID} "/var/lib/php/sessions" && \
-	export OST_CONFIG_FILE='/var/www/html/include/ost-config.php' &&\
+	export OST_CONFIG_FILE='/var/www/html/include/ost-config.php' && \
 	test '!' -e "${OST_CONFIG_FILE}" && cp "/var/www/html/include/ost-sampleconfig.php" "${OST_CONFIG_FILE}" && \
 	chown ${PUID} "${OST_CONFIG_FILE}" && \
 	mkdir "${USER_FILES}" && \
