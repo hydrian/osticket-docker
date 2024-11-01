@@ -1,2 +1,2 @@
 09,39 * * * * [ -x /usr/lib/php/sessionclean ] && /usr/lib/php/sessionclean
-*/%CRON_INTERVAL% * * * * /var/www/scripts/rcron.php 
+*/%CRON_INTERVAL% * * * * /var/www/scripts/rcron.php
