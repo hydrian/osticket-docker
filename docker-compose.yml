@@ -14,7 +14,7 @@ services:
       - osticket_config:/var/www/html/include/ost-config.php
       - osticket_logs:/logs
   maria_db:
-    image: mariadb:11.2
+    image: mariadb:lts-noble
     networks:
       - osticket_net
     restart: always
@@ -23,7 +23,7 @@ services:
   memcache:
     networks:
       - osticket_net
-    image: memcache:1.6
+    image: memcached:1.6
     restart: always
 volumes:
   osticket_db:
