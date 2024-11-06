@@ -1,20 +1,17 @@
 version: '2'
 services:
   app_server:
-    env_file:
-      - fileName
-    image: hydrian/osticket:latest
+    image: osticket:latest
     restart: always
     networks:
       - osticket_net
     ports:
-      - 127.0.0.1:8070:8070
+      - 8070:127.0.0.1:8070
     volumes:
       - osticket_userfiles:/var/www/user_files
       - osticket_config:/var/www/html/include/ost-config.php
-      - osticket_logs:/logs
   maria_db:
-    image: mariadb:lts-noble
+    image: mariadb:11.2
     networks:
       - osticket_net
     restart: always
@@ -29,7 +26,5 @@ volumes:
   osticket_db:
   osticket_userfiles:
   osticket_config:
-  osticket_logs:
-  osticket_backups:
 networks:
   osticket_net:

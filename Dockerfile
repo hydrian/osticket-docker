@@ -181,5 +181,5 @@ RUN \
 	sed -ir 's|%CRON_INTERVAL%|'"${CRON_INTERVAL}"'|' "/etc/crontab.supercronic" && \
 	a2ensite 000-default
 USER $USERNAME
-ENTRYPOINT ["/bin/bash"]
+ENTRYPOINT ["/usr/bin/supervisord"]
 EXPOSE ${HTTP_PORT}
