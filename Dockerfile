@@ -37,7 +37,9 @@ ENV SMTP_TRUST_FILE='/etc/ssl/certs/ca-certificates.crt'
 ENV APACHE_MODS_DISABLE='status autoindex'
 ENV APACHE_MODS_ENABLE="php${PHP_BASE_VERSION}"
 ENV APACHE_CONF_DISABLE="serve-cgi-bin"
-ENV SUPERVISOR_CONF_FILE="/etc/supervisord.conf"
+ENV SUPERVISOR_DIR="/etc/supervisor"
+ENV SUPERVISOR_CONF_FILE="${SUPERVISOR_DIR}/supervisord.conf"
+ENV SUPERVISOR_PROGRAM_DIR="${SUPERVISOR_DIR}/conf.d"
 ENV APACHE_RUN_USER=${USERNAME}
 ENV APACHE_RUN_GROUP=${USERNAME}
 ENV APACHE_RUN_DIR=/var/run/apache2
@@ -48,8 +50,7 @@ ENV APACHE_HOSTNAME="${OSTICKET_HOSTNAME}"
 ENV APACHE_DEFAULT_SITE_FILE='/etc/apache2/sites-available/000-default.conf'
 ENV USER_FILES='/var/www/user_files'
 
-COPY --chown=0:${PGID} --chmod=640 msmtp.conf "${MSMTP_CONF_FILE}"
-COPY --chown=0:${PGID} --chmod=640 supervisord.conf "${SUPERVISOR_CONF_FILE}"
+
 
 RUN \
 	# Setup Timezone info
@@ -94,16 +95,25 @@ RUN \
 	for MOD in "${APACHE_MODS_ENABLE}" ; do a2enmod $MOD ; done && \
 	for CONF in "${APACHE_CONF_DISABLE}" ; do a2disconf $CONF ; done && \
 	echo "Listen ${HTTP_PORT}" > "/etc/apache2/ports.conf" && \
+	update-ca-certificates
+COPY --chown=0:${PGID} supercronic.crontab /etc/crontab.supercronic
+COPY --chown=0:${PGID} apache.conf /etc/apache2/apache2.conf
+COPY --chown=0:${PGID} apache2-default-site.conf /etc/apache2/sites-available/000-default.conf
+COPY --chown=0:${PGID} msmtp.conf "${MSMTP_CONF_FILE}"
+COPY --chown=0:${PGID} supervisord.conf "${SUPERVISOR_CONF_FILE}"
+COPY --chown=0:${PGID} supervisor-supercronic.conf "${SUPERVISOR_PROGRAM_DIR}/supercronic.conf"
+COPY --chown=0:${PGID} supervisor-apache2.conf "${SUPERVISOR_PROGRAM_DIR}/apache2.conf"
+RUN \
+	# Setup SupervisorD
+	groupadd -g "${PGID}" "${USERNAME}" && \
+	useradd -u "${PUID}" -g "${PGID}" "${USERNAME}" && \
+	mkdir -p /app /run/supervisor ${APACHE_LOG_DIR} ${APACHE_RUN_DIR} ${APACHE_LOCK_DIR} && \
 	find /etc/apache2  -exec chown -Rf root:${PGID} \{\} \; && \
 	find /etc/apache2 -type d -exec chmod -Rf 750 \{\} \; && \
-	update-ca-certificates && \
-	# Setup SupervisorD
-	mkdir -p /app /run/supervisor ${APACHE_LOG_DIR} ${APACHE_RUN_DIR} ${APACHE_LOCK_DIR} && \
 	chown ${PUID} ${APACHE_LOCK_DIR} ${APACHE_LOG_DIR} ${APACHE_RUN_DIR} && \
 	chgrp ${PGID} /run/supervisor && \
-	chmod '770' /run/supervisor && \
+	chmod '777' /run/supervisor && \
 	# Setup msmtp
-	sed -ir 's|youruser|'"${PUID}"':'"${PGID}"'|' "${SUPERVISOR_CONF_FILE}" && \
 	sed -ir 's|%SMTP_HOSTNAME%|'"${SMTP_HOSTNAME}"'|' "${MSMTP_CONF_FILE}" && \
 	sed -ir 's|%SMTP_PORT%|'"${SMTP_PORT}"'|' "${MSMTP_CONF_FILE}" && \
 	sed -ir 's|%SMTP_TLS%|'"${SMTP_TLS}"'|' "${MSMTP_CONF_FILE}" && \
@@ -120,6 +130,7 @@ RUN \
 	# Setup Official OSTicket
 	wget -O '/tmp/osticket.zip' "https://github.com/osTicket/osTicket/releases/download/v${OSTICKET_VERSION}/osTicket-v${OSTICKET_VERSION}.zip" && \
 	unzip '/tmp/osticket.zip' -d /var/www && \
+	rm '/tmp/osticket.zip' && \
 	rm -Rf /var/www/html && \
 	mv /var/www/upload/ /var/www/html && \
 	# Setup Official Plugins
@@ -130,33 +141,33 @@ RUN \
     #cp -R ${OSTICKET_PLUGIN_SRC_DIR}/*.phar "${OSTICKET_PLUGIN_DIR}/" && \
     cd / && \
 	## Archiver
-    git clone --branch master https://github.com/clonemeagain/osticket-plugin-archiver ${OSTICKET_PLUGIN_DIR}/archiver && \
-    ## Attachment Preview
-    git clone --branch master https://github.com/clonemeagain/attachment_preview ${OSTICKET_PLUGIN_DIR}/attachment-preview && \
-    ## Auto Closer
-    git clone --branch master https://github.com/clonemeagain/plugin-autocloser  ${OSTICKET_PLUGIN_DIR}/auto-closer && \
-    ## Fetch Note
-    git clone --branch master https://github.com/bkonetzny/osticket-fetch-note ${OSTICKET_PLUGIN_DIR}/fetch-note && \
-    ## Field Radio Buttons
-    git clone --branch master https://github.com/Micke1101/OSTicket-plugin-field-radiobuttons  ${OSTICKET_PLUGIN_DIR}/field-radiobuttons && \
-    ## Mentioner
-    git clone --branch master https://github.com/clonemeagain/osticket-plugin-mentioner ${OSTICKET_PLUGIN_DIR}/mentioner && \
-    ## Multi LDAP Auth
-    git clone --branch master https://github.com/philbertphotos/osticket-multildap-auth ${OSTICKET_PLUGIN_DIR}/multi-ldap && \
-    mv ${OSTICKET_PLUGIN_DIR}/multi-ldap/multi-ldap/* ${OSTICKET_PLUGIN_DIR}/multi-ldap/ && \
-    rm -rf ${OSTICKET_PLUGIN_DIR}/multi-ldap/multi-ldap && \
-    ## Prevent Autoscroll
-    git clone --branch master https://github.com/clonemeagain/osticket-plugin-preventautoscroll ${OSTICKET_PLUGIN_DIR}/prevent-autoscroll && \
-    ## Rewriter
-    git clone --branch master https://github.com/clonemeagain/plugin-fwd-rewriter ${OSTICKET_PLUGIN_DIR}/rewriter && \
-    ## Slack
-    git clone --branch master https://github.com/clonemeagain/osticket-slack ${OSTICKET_PLUGIN_DIR}/slack && \
-    ## Teams (Microsoft)
-    git clone --branch master https://github.com/ipavlovi/osTicket-Microsoft-Teams-plugin ${OSTICKET_PLUGIN_DIR}/teams && \
-	groupadd -g "${PGID}" "${USERNAME}" && \
-	useradd -u "${PUID}" -g "${PGID}" "${USERNAME}" && \
+	if  ( ${COMMUNITY_PLUGINS} ) ; then \
+		git clone --branch master https://github.com/clonemeagain/osticket-plugin-archiver ${OSTICKET_PLUGIN_DIR}/archiver && \
+		## Attachment Preview
+		git clone --branch master https://github.com/clonemeagain/attachment_preview ${OSTICKET_PLUGIN_DIR}/attachment-preview && \
+		## Auto Closer
+		git clone --branch master https://github.com/clonemeagain/plugin-autocloser  ${OSTICKET_PLUGIN_DIR}/auto-closer && \
+		## Fetch Note
+		git clone --branch master https://github.com/bkonetzny/osticket-fetch-note ${OSTICKET_PLUGIN_DIR}/fetch-note && \
+		## Field Radio Buttons
+		git clone --branch master https://github.com/Micke1101/OSTicket-plugin-field-radiobuttons  ${OSTICKET_PLUGIN_DIR}/field-radiobuttons && \
+		## Mentioner
+		git clone --branch master https://github.com/clonemeagain/osticket-plugin-mentioner ${OSTICKET_PLUGIN_DIR}/mentioner && \
+		## Multi LDAP Auth
+		git clone --branch master https://github.com/philbertphotos/osticket-multildap-auth ${OSTICKET_PLUGIN_DIR}/multi-ldap && \
+		mv ${OSTICKET_PLUGIN_DIR}/multi-ldap/multi-ldap/* ${OSTICKET_PLUGIN_DIR}/multi-ldap/ && \
+		rm -rf ${OSTICKET_PLUGIN_DIR}/multi-ldap/multi-ldap && \
+		## Prevent Autoscroll
+		git clone --branch master https://github.com/clonemeagain/osticket-plugin-preventautoscroll ${OSTICKET_PLUGIN_DIR}/prevent-autoscroll && \
+		## Rewriter
+		git clone --branch master https://github.com/clonemeagain/plugin-fwd-rewriter ${OSTICKET_PLUGIN_DIR}/rewriter && \
+		## Slack
+		git clone --branch master https://github.com/clonemeagain/osticket-slack ${OSTICKET_PLUGIN_DIR}/slack && \
+		## Teams (Microsoft)
+		git clone --branch master https://github.com/ipavlovi/osTicket-Microsoft-Teams-plugin ${OSTICKET_PLUGIN_DIR}/teams ; \
+	fi && \	
 	export CRON_SCRIPT="/var/www/scripts/rcron.php" && \
-	chmod +x "${CRON_SCRIPT}" && \
+	chmod +x "/var/www/scripts"/* && \
 	sed -ir 's|http://yourdomain.com/support|http://localhost|' "${CRON_SCRIPT}" && \
 	chown ${PUID} "/var/lib/php/sessions" && \
 	export OST_CONFIG_FILE='/var/www/html/include/ost-config.php' && \
@@ -164,9 +175,6 @@ RUN \
 	chown ${PUID} "${OST_CONFIG_FILE}" && \
 	mkdir "${USER_FILES}" && \
 	chown ${PUID}:${PGID} "${USER_FILES}"
-COPY supercronic.crontab /etc/crontab.supercronic
-COPY --chown=0:${PGID} --chmod=640 apache.conf /etc/apache2/apache2.conf
-COPY --chown=0:${PGID} --chmod=640 apache2-default-site.conf /etc/apache2/sites-available/000-default.conf
 RUN \
 	sed -ir 's|%OSTICKET_ADMIN_EMAIL%|'"${ADMIN_EMAIL}"'|' "${APACHE_DEFAULT_SITE_FILE}" && \
 	sed -ir 's|%HTTP_PORT%|'"${HTTP_PORT}"'|' "${APACHE_DEFAULT_SITE_FILE}" && \
