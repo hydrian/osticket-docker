@@ -1,6 +1,9 @@
 # syntax=docker/dockerfile:1
 FROM ubuntu:22.04
 
+ARG UID_DEFAULT 
+ARG GID_DEFAULT
+
 ENV DEBIAN_FRONTEND=noninteractive
 ENV HTTP_PORT=8070 
 ENV	USERNAME='osticket'
@@ -21,8 +24,8 @@ ENV ADMIN_USERNAME='ostadmin'
 ENV ADMIN_PASS='Admin1'
 ENV CRON_INTERVAL=5
 ENV APACHE_ERROR_LOG_FILE=/dev/stderr
-ENV PUID=1000
-ENV PGID=1000
+ENV UID=${UID_DEFAULT}
+ENV GID=${GID_DEFAULT}
 ENV MSMTP_CONF_FILE='/etc/msmtprc'
 ENV SMTP_HOSTNAME='localhost'
 ENV SMTP_PORT='465'
@@ -96,22 +99,22 @@ RUN \
 	for CONF in "${APACHE_CONF_DISABLE}" ; do a2disconf $CONF ; done && \
 	echo "Listen ${HTTP_PORT}" > "/etc/apache2/ports.conf" && \
 	update-ca-certificates
-COPY --chown=0:${PGID} supercronic.crontab /etc/crontab.supercronic
-COPY --chown=0:${PGID} apache.conf /etc/apache2/apache2.conf
-COPY --chown=0:${PGID} apache2-default-site.conf /etc/apache2/sites-available/000-default.conf
-COPY --chown=0:${PGID} msmtp.conf "${MSMTP_CONF_FILE}"
-COPY --chown=0:${PGID} supervisord.conf "${SUPERVISOR_CONF_FILE}"
-COPY --chown=0:${PGID} supervisor-supercronic.conf "${SUPERVISOR_PROGRAM_DIR}/supercronic.conf"
-COPY --chown=0:${PGID} supervisor-apache2.conf "${SUPERVISOR_PROGRAM_DIR}/apache2.conf"
+COPY --chown=0:${GID} supercronic.crontab /etc/crontab.supercronic
+COPY --chown=0:${GID} apache.conf /etc/apache2/apache2.conf
+COPY --chown=0:${GID} apache2-default-site.conf /etc/apache2/sites-available/000-default.conf
+COPY --chown=0:${GID} msmtp.conf "${MSMTP_CONF_FILE}"
+COPY --chown=0:${GID} supervisord.conf "${SUPERVISOR_CONF_FILE}"
+COPY --chown=0:${GID} supervisor-supercronic.conf "${SUPERVISOR_PROGRAM_DIR}/supercronic.conf"
+COPY --chown=0:${GID} supervisor-apache2.conf "${SUPERVISOR_PROGRAM_DIR}/apache2.conf"
 RUN \
 	# Setup SupervisorD
-	groupadd -g "${PGID}" "${USERNAME}" && \
-	useradd -u "${PUID}" -g "${PGID}" "${USERNAME}" && \
+	groupadd -g "${GID}" "${USERNAME}" && \
+	useradd -l -u "${UID}" -g "${GID}" "${USERNAME}" && \
 	mkdir -p /app /run/supervisor ${APACHE_LOG_DIR} ${APACHE_RUN_DIR} ${APACHE_LOCK_DIR} && \
-	find /etc/apache2  -exec chown -Rf root:${PGID} \{\} \; && \
+	find /etc/apache2  -exec chown -Rf root:${GID} \{\} \; && \
 	find /etc/apache2 -type d -exec chmod -Rf 750 \{\} \; && \
-	chown ${PUID} ${APACHE_LOCK_DIR} ${APACHE_LOG_DIR} ${APACHE_RUN_DIR} && \
-	chgrp ${PGID} /run/supervisor && \
+	chown ${UID} ${APACHE_LOCK_DIR} ${APACHE_LOG_DIR} ${APACHE_RUN_DIR} && \
+	chgrp ${GID} /run/supervisor && \
 	chmod '777' /run/supervisor && \
 	# Setup msmtp
 	sed -ir 's|%SMTP_HOSTNAME%|'"${SMTP_HOSTNAME}"'|' "${MSMTP_CONF_FILE}" && \
@@ -167,14 +170,14 @@ RUN \
 		git clone --branch master https://github.com/ipavlovi/osTicket-Microsoft-Teams-plugin ${OSTICKET_PLUGIN_DIR}/teams ; \
 	fi && \	
 	export CRON_SCRIPT="/var/www/scripts/rcron.php" && \
-	chmod +x "/var/www/scripts"/* && \
+	chmod -R +x "/var/www/scripts" && \
 	sed -ir 's|http://yourdomain.com/support|http://localhost|' "${CRON_SCRIPT}" && \
-	chown ${PUID} "/var/lib/php/sessions" && \
+	chown ${UID} "/var/lib/php/sessions" && \
 	export OST_CONFIG_FILE='/var/www/html/include/ost-config.php' && \
 	test '!' -e "${OST_CONFIG_FILE}" && cp "/var/www/html/include/ost-sampleconfig.php" "${OST_CONFIG_FILE}" && \
-	chown ${PUID} "${OST_CONFIG_FILE}" && \
+	chown ${UID} "${OST_CONFIG_FILE}" && \
 	mkdir "${USER_FILES}" && \
-	chown ${PUID}:${PGID} "${USER_FILES}"
+	chown ${UID}:${GID} "${USER_FILES}"
 RUN \
 	sed -ir 's|%OSTICKET_ADMIN_EMAIL%|'"${ADMIN_EMAIL}"'|' "${APACHE_DEFAULT_SITE_FILE}" && \
 	sed -ir 's|%HTTP_PORT%|'"${HTTP_PORT}"'|' "${APACHE_DEFAULT_SITE_FILE}" && \
