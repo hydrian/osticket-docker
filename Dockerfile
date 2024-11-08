@@ -177,7 +177,9 @@ RUN \
 	test '!' -e "${OST_CONFIG_FILE}" && cp "/var/www/html/include/ost-sampleconfig.php" "${OST_CONFIG_FILE}" && \
 	chown ${UID} "${OST_CONFIG_FILE}" && \
 	mkdir "${USER_FILES}" && \
-	chown ${UID}:${GID} "${USER_FILES}"
+	chown ${UID}:${GID} "${USER_FILES}" && \ 
+	chmod 1770 /tmp && \
+	chown root:${GID} /tmp 
 RUN \
 	sed -ir 's|%OSTICKET_ADMIN_EMAIL%|'"${ADMIN_EMAIL}"'|' "${APACHE_DEFAULT_SITE_FILE}" && \
 	sed -ir 's|%HTTP_PORT%|'"${HTTP_PORT}"'|' "${APACHE_DEFAULT_SITE_FILE}" && \
