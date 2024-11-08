@@ -99,13 +99,13 @@ RUN \
 	for CONF in "${APACHE_CONF_DISABLE}" ; do a2disconf $CONF ; done && \
 	echo "Listen ${HTTP_PORT}" > "/etc/apache2/ports.conf" && \
 	update-ca-certificates
-COPY --chown=0:${GID_DEFAULT}} supercronic.crontab /etc/crontab.supercronic
-COPY --chown=0:${GID_DEFAULT}} apache.conf /etc/apache2/apache2.conf
-COPY --chown=0:${GID_DEFAULT}} apache2-default-site.conf /etc/apache2/sites-available/000-default.conf
-COPY --chown=0:${GID_DEFAULT}} msmtp.conf "${MSMTP_CONF_FILE}"
-COPY --chown=0:${GID_DEFAULT}} supervisord.conf "${SUPERVISOR_CONF_FILE}"
-COPY --chown=0:${GID_DEFAULT}} supervisor-supercronic.conf "${SUPERVISOR_PROGRAM_DIR}/supercronic.conf"
-COPY --chown=0:${GID_DEFAULT}} supervisor-apache2.conf "${SUPERVISOR_PROGRAM_DIR}/apache2.conf"
+COPY --chown=0:${GID_DEFAULT} supercronic.crontab /etc/crontab.supercronic
+COPY --chown=0:${GID_DEFAULT} apache.conf /etc/apache2/apache2.conf
+COPY --chown=0:${GID_DEFAULT} apache2-default-site.conf /etc/apache2/sites-available/000-default.conf
+COPY --chown=0:${GID_DEFAULT} msmtp.conf "${MSMTP_CONF_FILE}"
+COPY --chown=0:${GID_DEFAULT} supervisord.conf "${SUPERVISOR_CONF_FILE}"
+COPY --chown=0:${GID_DEFAULT} supervisor-supercronic.conf "${SUPERVISOR_PROGRAM_DIR}/supercronic.conf"
+COPY --chown=0:${GID_DEFAULT} supervisor-apache2.conf "${SUPERVISOR_PROGRAM_DIR}/apache2.conf"
 RUN \
 	# Setup SupervisorD
 	groupadd -g "${GID}" "${USERNAME}" && \
