@@ -38,7 +38,7 @@ ENV SMTP_PASS='changeme'
 ENV SMTP_FROM="osticket@${OSTICKET_HOSTNAME}"
 ENV SMTP_TRUST_FILE='/etc/ssl/certs/ca-certificates.crt'
 ENV APACHE_MODS_DISABLE='status autoindex'
-ENV APACHE_MODS_ENABLE="php${PHP_BASE_VERSION}"
+ENV APACHE_MODS_ENABLE="php${PHP_BASE_VERSION} remoteip"
 ENV APACHE_CONF_DISABLE="serve-cgi-bin"
 ENV SUPERVISOR_DIR="/etc/supervisor"
 ENV SUPERVISOR_CONF_FILE="${SUPERVISOR_DIR}/supervisord.conf"
@@ -48,9 +48,10 @@ ENV APACHE_RUN_GROUP=${USERNAME}
 ENV APACHE_RUN_DIR=/var/run/apache2
 ENV APACHE_PID_FILE="${APACHE_RUN_DIR}/apache2.pid"
 ENV APACHE_LOCK_DIR=/var/lock/apache2
-ENV APACHE_LOG_DIR=/log/apache2
+ENV APACHE_LOG_DIR=/logs/apache2
 ENV APACHE_HOSTNAME="${OSTICKET_HOSTNAME}"
 ENV APACHE_DEFAULT_SITE_FILE='/etc/apache2/sites-available/000-default.conf'
+ENV APACHE_ERROR_LOG_FILE='/dev/stderr'
 ENV USER_FILES='/var/www/user_files'
 
 
