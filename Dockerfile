@@ -45,7 +45,6 @@ ENV SUPERVISOR_CONF_FILE="${SUPERVISOR_DIR}/supervisord.conf"
 ENV SUPERVISOR_PROGRAM_DIR="${SUPERVISOR_DIR}/conf.d"
 ENV APACHE_RUN_USER=${USERNAME}
 ENV APACHE_RUN_GROUP=${USERNAME}
-ENV APACHE_RUN_DIR=/var/run/apache2
 ENV APACHE_PID_FILE="${APACHE_RUN_DIR}/apache2.pid"
 ENV APACHE_LOCK_DIR=/var/lock/apache2
 ENV APACHE_LOG_DIR=/logs/apache2
@@ -114,7 +113,7 @@ RUN \
 	mkdir -p /app /run/supervisor ${APACHE_LOG_DIR} ${APACHE_RUN_DIR} ${APACHE_LOCK_DIR} && \
 	find /etc/apache2  -exec chown -Rf root:${GID} \{\} \; && \
 	find /etc/apache2 -type d -exec chmod -Rf 750 \{\} \; && \
-	chown ${UID} ${APACHE_LOCK_DIR} ${APACHE_LOG_DIR} ${APACHE_RUN_DIR} && \
+	chown ${UID} ${APACHE_LOCK_DIR} ${APACHE_LOG_DIR} && \
 	chgrp ${GID} /run/supervisor && \
 	chmod '777' /run/supervisor && \
 	# Setup msmtp
