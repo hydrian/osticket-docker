@@ -52,7 +52,7 @@ ENV APACHE_HOSTNAME="${OSTICKET_HOSTNAME}"
 ENV APACHE_DEFAULT_SITE_FILE='/etc/apache2/sites-available/000-default.conf'
 ENV APACHE_ERROR_LOG_FILE='/dev/stderr'
 ENV USER_FILES='/var/www/user_files'
-
+ENV ALLOW_SETUP='true'
 
 
 RUN \
