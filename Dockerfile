@@ -186,7 +186,10 @@ RUN \
 	sed -ir 's|%APACHE_LOG_DIR%|'"${APACHE_LOG_DIR}"'|' "${APACHE_DEFAULT_SITE_FILE}"  && \
 	sed -ir 's|%HTTP_PORT%|'"${HTTP_PORT}"'|' "${APACHE_DEFAULT_SITE_FILE}" && \
 	sed -ir 's|%CRON_INTERVAL%|'"${CRON_INTERVAL}"'|' "/etc/crontab.supercronic" && \
-	a2ensite 000-default
+	a2ensite 000-default && \
+	if ! (${ALLOW_SETUP}) ; then \
+		rm -Rf /var/www/html/setup ; \
+	fi 
 USER $USERNAME
 ENTRYPOINT ["/usr/bin/supervisord"]
 EXPOSE ${HTTP_PORT}
