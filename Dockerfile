@@ -3,7 +3,7 @@ FROM ubuntu:22.04
 
 ARG UID_DEFAULT 
 ARG GID_DEFAULT
-ARG ALLOW_SETUP='true'
+ARG ALLOW_SETUP_DEFAULT='true'
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV HTTP_PORT=8070 
@@ -53,7 +53,7 @@ ENV APACHE_HOSTNAME="${OSTICKET_HOSTNAME}"
 ENV APACHE_DEFAULT_SITE_FILE='/etc/apache2/sites-available/000-default.conf'
 ENV APACHE_ERROR_LOG_FILE='/dev/stderr'
 ENV USER_FILES='/var/www/user_files'
-ENV ALLOW_SETUP=${ALLOW_SETUP_DEFAULT}
+ENV ALLOW_SETUP="${ALLOW_SETUP_DEFAULT}"
 
 
 RUN \
@@ -189,6 +189,7 @@ RUN \
 	sed -ir 's|%CRON_INTERVAL%|'"${CRON_INTERVAL}"'|' "/etc/crontab.supercronic" && \
 	a2ensite 000-default && \
 	if ! (${ALLOW_SETUP}) ; then \
+		echo "Removing setup for security reasons" && \
 		rm -Rf /var/www/html/setup ; \
 	fi 
 USER $USERNAME
